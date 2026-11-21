@@ -1,0 +1,241 @@
+schema = 1
+id = "neoqua"
+name = "Neoqua"
+version = "0.1.0"
+api = "0.2"
+description = "Cinematic water-first WGSL shader pack engineered for Intel HD 4600 and 60 FPS on Horizon."
+authors = ["Henny", "Gemini Neon", "Qwen Coder"]
+license = "MIT"
+shared = ["common.wgsl"]
+
+[frame]
+fog = "pack"
+blend = "linear"
+primaries = "bt709"
+
+[budget]
+gpu_ms = 1.5
+
+[sky]
+file = "sky.wgsl"
+clouds = true
+sun = true
+moon = true
+stars = true
+
+[vertex]
+file = "vertex.wgsl"
+
+[material]
+file = "material.wgsl"
+coverage = "engine"
+
+[reflection]
+option = "water_reflection"
+
+[entity]
+file = "entity.wgsl"
+coverage = "engine"
+
+[weather]
+file = "weather.wgsl"
+
+[[post]]
+file = "post/bloom_bright.wgsl"
+name = "Bloom Threshold"
+output = "bloom_a"
+scale = 0.5
+
+[[post]]
+file = "post/bloom_blur.wgsl"
+name = "Bloom Blur"
+output = "bloom_b"
+scale = 0.25
+
+[[post]]
+file = "post/grade.wgsl"
+name = "Cinematic Grade"
+output = "graded"
+scale = 1.0
+
+[[post]]
+file = "post/fxaa.wgsl"
+name = "HDR FXAA"
+
+[tonemap]
+file = "tonemap.wgsl"
+
+[[textures]]
+id = "noise"
+file = "textures/noise.png"
+filter = "linear"
+wrap = "repeat"
+
+[[materials]]
+id = 1
+sprites = ["block/water_still", "block/water_flow"]
+translucent = true
+
+[[materials]]
+id = 2
+sprites = ["block/*_leaves"]
+translucent = false
+
+[[materials]]
+id = 3
+sprites = [
+    "block/short_grass",
+    "block/tall_grass_*",
+    "block/fern",
+    "block/large_fern_*",
+    "block/*_sapling",
+    "block/dandelion",
+    "block/poppy",
+    "block/wheat_*",
+    "block/sugar_cane",
+    "block/vine",
+    "block/kelp*",
+    "block/seagrass*",
+    "block/tall_seagrass_*",
+]
+translucent = false
+
+[[materials]]
+id = 4
+sprites = [
+    "block/torch",
+    "block/lantern",
+    "block/glowstone",
+    "block/shroomlight",
+    "block/jack_o_lantern",
+    "block/lava_*",
+    "block/magma",
+    "block/campfire_*",
+    "block/redstone_lamp_on",
+]
+translucent = false
+
+[[materials]]
+id = 5
+sprites = [
+    "block/soul_torch",
+    "block/soul_lantern",
+    "block/sea_lantern",
+    "block/end_rod",
+    "block/amethyst_cluster",
+]
+translucent = false
+
+[[lights]]
+color = [1.0, 0.66, 0.32]
+blocks = ["*torch", "lantern", "glowstone", "shroomlight", "jack_o_lantern", "lava", "campfire"]
+
+[[lights]]
+color = [0.35, 0.85, 1.0]
+blocks = ["soul_*", "sea_lantern"]
+
+[[options]]
+id = "water_waves"
+name = "Water Waves & Surface Detail"
+type = "bool"
+default = true
+
+[[options]]
+id = "water_reflection"
+name = "Planar Water Reflection"
+type = "bool"
+default = true
+
+[[options]]
+id = "water_clarity"
+name = "Water Clarity"
+type = "float"
+default = 1.0
+min = 0.4
+max = 2.0
+step = 0.1
+
+[[options]]
+id = "waving_foliage"
+name = "Waving Foliage"
+type = "bool"
+default = true
+
+[[options]]
+id = "torch_warmth"
+name = "Torchlight Warmth"
+type = "float"
+default = 1.0
+min = 0.0
+max = 1.5
+step = 0.1
+
+[[options]]
+id = "rain_ripples"
+name = "Rain Ripples & Wet Surfaces"
+type = "bool"
+default = true
+
+[[options]]
+id = "night_stars"
+name = "Enhanced Night Stars"
+type = "bool"
+default = true
+
+[[options]]
+id = "bloom_enabled"
+name = "Half-Res Bloom"
+type = "bool"
+default = true
+
+[[options]]
+id = "bloom_strength"
+name = "Bloom Intensity"
+type = "float"
+default = 0.22
+min = 0.0
+max = 0.6
+step = 0.02
+
+[[options]]
+id = "grade_preset"
+name = "Color Grade"
+type = "choice"
+default = "Cinematic"
+values = ["Cinematic", "Vibrant Aqua", "Crisp Vanilla"]
+
+[[options]]
+id = "fxaa_enabled"
+name = "HDR FXAA"
+type = "bool"
+default = true
+
+[[options]]
+id = "exposure"
+name = "Exposure"
+type = "float"
+default = 1.05
+min = 0.6
+max = 1.6
+step = 0.05
+
+[[pages]]
+id = "water"
+name = "Water"
+description = "Hero water waves, clarity, and mirror reflections."
+columns = 1
+items = ["water_waves", "water_reflection", "water_clarity", "rain_ripples"]
+
+[[pages]]
+id = "atmosphere"
+name = "Atmosphere & World"
+description = "Sky, lighting warmth, and waving plants."
+columns = 1
+items = ["waving_foliage", "torch_warmth", "night_stars"]
+
+[[pages]]
+id = "post"
+name = "Post-Processing"
+description = "Bloom, color grade, anti-aliasing, and exposure."
+columns = 1
+items = ["bloom_enabled", "bloom_strength", "grade_preset", "fxaa_enabled", "exposure"]
