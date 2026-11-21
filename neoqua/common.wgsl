@@ -6,8 +6,9 @@ const NEOQUA_TAU: f32 = 6.28318530;
 const NEOQUA_WRAP: f32 = 64.0;
 const NEOQUA_K_UNIT: f32 = 0.09817477;
 
-// BT.709 luminance weights. API 0.2 has no `frame.luminance`; this is the same
-// dot product the reference documents.
+// BT.709 luminance weights. This branch's API 0.2 has no `frame.luminance`
+// (upstream added it with `[frame] primaries`); this is the same dot product
+// the reference documents.
 const NEOQUA_LUMA: vec3<f32> = vec3<f32>(0.2126, 0.7152, 0.0722);
 
 const NEOQUA_DAY_ZENITH: vec3<f32> = vec3<f32>(0.075, 0.245, 0.680);

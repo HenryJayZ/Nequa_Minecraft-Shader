@@ -1,7 +1,7 @@
 schema = 1
 id = "neoqua"
 name = "Neoqua"
-version = "0.1.1"
+version = "0.1.2"
 api = "0.2"
 description = "Cinematic water-first WGSL shader pack engineered for Intel HD 4600 and 60 FPS on Horizon."
 authors = ["Henny", "Gemini Neon", "OpenCode"]
@@ -208,6 +208,13 @@ default = 1.05
 min = 0.6
 max = 1.6
 step = 0.05
+
+[[pages]]
+id = "main"
+name = "Neoqua"
+description = "Water-first cinematic shading for Intel HD 4600."
+columns = 1
+items = ["page:water", "page:atmosphere", "page:post"]
 
 [[pages]]
 id = "water"

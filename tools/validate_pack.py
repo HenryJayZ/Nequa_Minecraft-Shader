@@ -167,19 +167,67 @@ def main() -> int:
             err(f"option {oid!r}: missing default")
 
     pages = m.get("pages", [])
-    page_ids = {p.get("id") for p in pages}
-    for p in pages:
+    page_ids = {p.get("id") for p in pages if isinstance(p.get("id"), str)}
+    page_at: dict[str, int] = {}
+    for i, p in enumerate(pages):
         check_unknown(p, PAGE_KEYS, f"page {p.get('id')!r}")
+        pid = p.get("id")
+        if not isinstance(pid, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", pid):
+            err(f"page {pid!r}: id must be a letter, then letters, digits or _, up to 64")
+        elif pid in page_at:
+            err(f"page {pid!r}: declared twice")
+        else:
+            page_at[pid] = i
+        if not str(p.get("name", "")).strip():
+            err(f"page {pid!r}: needs a name")
         if p.get("columns", 2) not in (1, 2):
-            err(f"page {p.get('id')!r}: columns must be 1 or 2")
-        for item in p.get("items", []):
+            err(f"page {pid!r}: columns must be 1 or 2")
+        items = p.get("items", [])
+        if len(items) > 32:
+            err(f"page {pid!r}: more than 32 items")
+        seen_items: set[str] = set()
+        for item in items:
             if item == "":
                 continue
+            if item in seen_items:
+                err(f"page {pid!r}: {item!r} is on the page twice")
+            seen_items.add(item)
             if item.startswith("page:"):
-                if item[5:] not in page_ids:
-                    err(f"page {p.get('id')!r}: links unknown page {item!r}")
+                link = item[5:]
+                if link == pid:
+                    err(f"page {pid!r}: links to itself")
+                elif link not in page_ids:
+                    err(f"page {pid!r}: links unknown page {link!r}")
             elif item not in option_types:
-                err(f"page {p.get('id')!r}: unknown option {item!r}")
+                err(f"page {pid!r}: unknown option {item!r}")
+
+    # The game walks `page:` links from the first page: every page and every option
+    # has to be reachable, or it refuses the whole pack.
+    if pages:
+        reachable: set[int] = set()
+        stack = [0]
+        while stack:
+            at = stack.pop()
+            if at in reachable:
+                continue
+            reachable.add(at)
+            for item in pages[at].get("items", []):
+                if item.startswith("page:") and item[5:] in page_at:
+                    stack.append(page_at[item[5:]])
+        for i, p in enumerate(pages):
+            if i not in reachable:
+                err(
+                    f"page {p.get('id')!r}: can't be reached from the first page, "
+                    f"{pages[0].get('id')!r}"
+                )
+        shown: set[str] = set()
+        for at in reachable:
+            for item in pages[at].get("items", []):
+                if item and not item.startswith("page:"):
+                    shown.add(item)
+        for oid in option_types:
+            if oid not in shown:
+                err(f"option {oid!r}: is on no page the settings reach")
 
     textures = m.get("textures", [])
     if len(textures) > 8:

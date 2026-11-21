@@ -12,22 +12,37 @@ WGSL only — no GLSL, no OptiFine/Iris files, no preprocessor, no ray tracing a
 - Launch the game with **`HORIZON_HDR_FRAME=float`**: the game only draws 0.2 packs with it set.
 - No LabPBR resource pack is required; the pack works from vanilla textures.
 
+This pack targets the **`nightly-2026-11-08` branch** (the `imported-2026-11-09` build).
+Upstream `main` has since added `frame.luminance`, `[frame] primaries` and the `[entity]`
+stage; they are real there, but this branch's `Frame` has none of them.
+
 ## Install
 
 ```sh
-./tools/check.sh                 # static pre-check, then horizon-shader check --json
-horizon-shader pack neoqua       # -> neoqua-0.1.1.hshader
-cp neoqua-0.1.1.hshader ~/.local/share/horizon/shaderpacks/
+./tools/check.sh                  # offline contract check, then horizon-shader check if built
+horizon-shader pack neoqua        # -> neoqua-0.1.2.hshader (when horizon-shader is on PATH)
+cp neoqua-0.1.2.hshader ~/.local/share/horizon/shaderpacks/
 ```
 
-Or point Horizon at the folder directly while developing:
+Or install the folder form directly (what the runtime test below used):
 
 ```sh
-ln -s "$PWD/neoqua" ~/.local/share/horizon/shaderpacks/neoqua
-HORIZON_SHADER_PACK="$PWD/neoqua" HORIZON_HDR_FRAME=float horizon
+cp -r neoqua ~/.local/share/horizon/shaderpacks/neoqua
 ```
 
-Then **Options → Shader Packs → Neoqua**.
+Start the game with `HORIZON_HDR_FRAME=float` and pick
+**Options → Horizon Settings → Shader Packs → Neoqua**. The pick is saved as
+`pickedShaderPack:neoqua` in `horizon-graphics.txt` beside `options.txt`.
+
+`HORIZON_SHADER_PACK` is for classic `shaders/` packs, **not** native 0.2 packs;
+it does nothing here.
+
+## Verified
+
+Compiled and rendered on Horizon Nightly 2026-11-09 (`3702eae`, imported build
+`imported-2026-11-09-f49b940`), Mesa 26.2.6 on an Intel HD 4600 (OpenGL), with
+`HORIZON_HDR_FRAME=float`: sky, material (with vertex), weather and tonemap plus
+all four post passes loaded in 349 ms, and 60 world frames ran with no naga error.
 
 ## What it does
 
@@ -40,7 +55,7 @@ Then **Options → Shader Packs → Neoqua**.
 | Post | Half-res threshold bloom (5-tap tent at quarter res), cinematic grade with three presets, vignette, HDR-safe FXAA |
 | Display | Exposure, filmic curve and highlight roll-off in `[tonemap]`, driven by `frame.headroom` |
 
-Twelve options, laid out on three pages (Water / Atmosphere & World / Post-Processing).
+Twelve options, reached from a main page: Water / Atmosphere & World / Post-Processing.
 
 ## Layout
 
@@ -68,14 +83,16 @@ tools/
 
 ## API 0.2 rules this pack is built around
 
-These are the traps that made earlier drafts fail against the real API:
+These are the traps that made earlier drafts fail against this branch:
 
-- **Luminance** is `dot(c, vec3(0.2126, 0.7152, 0.0722))`; there is no `frame.luminance`.
+- **Luminance** is `dot(c, vec3(0.2126, 0.7152, 0.0722))`; this branch has no `frame.luminance`.
 - **`MaterialInput.tint`**, not `shaded_tint`, is the vertex colour (biome tint + face shade + AO).
 - **`opaque_depth` / `scene_depth` are `texture_2d<f32>`**: load them and read `.r`.
-- **No `[entity]` stage**: API 0.2 has sky, vertex, material, weather, post and tonemap only.
+- **No `[entity]` stage on this branch**: sky, vertex, material, weather, post and tonemap only.
 - **`[sky]` keys** are `clouds`, `sun`, `stars` (there is no `moon` key).
-- **`[frame]`** accepts `blend` only (`gamma` or `linear`; the game serves `gamma`).
+- **`[frame]`** accepts `blend` only on this branch (`gamma` or `linear`; the game serves `gamma`).
+- **Settings pages are a graph**: the game walks `page:` links from the first page; every page
+  and every option must be reachable, or it refuses the pack.
 - **A post pass's alpha is ignored**, and `[[post]]` runs in linear HDR *before* `[tonemap]`.
 - **`output` diverts the chain**: the next pass's `previous` is the picture before the diverting
   pass, so the grade pass here deliberately writes `previous`.
