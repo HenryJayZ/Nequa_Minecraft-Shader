@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
-# Run Horizon's shader-pack check over Neoqua (API 0.2).
-# Requires `horizon-shader` on PATH (from a Horizon build: cargo build --release -p horizon-shader).
+# Validate Neoqua: offline contract check first, then Horizon's real API 0.2 check.
+# The real check needs `horizon-shader` on PATH (from a Horizon build:
+# cargo build --release -p horizon-shader).
 set -euo pipefail
 PACK="${1:-neoqua}"
 cd "$(dirname "$0")/.."
+
+if command -v python3 >/dev/null 2>&1; then
+  echo "==> static contract check (tools/validate_pack.py)"
+  python3 tools/validate_pack.py
+fi
 
 if ! command -v horizon-shader >/dev/null 2>&1; then
   echo "error: horizon-shader not found on PATH." >&2

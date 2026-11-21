@@ -1,3 +1,5 @@
+// Neoqua - [weather] stage (API 0.2): rain and snow streaks tinted by the sky.
+
 fn weather(input: WeatherInput) -> vec4<f32> {
     let dist = length(input.position);
     let near_fade = smoothstep(0.6, 2.2, dist);

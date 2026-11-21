@@ -1,17 +1,15 @@
 schema = 1
 id = "neoqua"
 name = "Neoqua"
-version = "0.1.0"
+version = "0.1.1"
 api = "0.2"
 description = "Cinematic water-first WGSL shader pack engineered for Intel HD 4600 and 60 FPS on Horizon."
-authors = ["Henny", "Gemini Neon", "Qwen Coder"]
+authors = ["Henny", "Gemini Neon", "OpenCode"]
 license = "MIT"
 shared = ["common.wgsl"]
 
 [frame]
-fog = "pack"
-blend = "linear"
-primaries = "bt709"
+blend = "gamma"
 
 [budget]
 gpu_ms = 1.5
@@ -20,22 +18,17 @@ gpu_ms = 1.5
 file = "sky.wgsl"
 clouds = true
 sun = true
-moon = true
-stars = true
+stars = false
 
 [vertex]
 file = "vertex.wgsl"
 
 [material]
 file = "material.wgsl"
-coverage = "engine"
+fog = false
 
 [reflection]
 option = "water_reflection"
-
-[entity]
-file = "entity.wgsl"
-coverage = "engine"
 
 [weather]
 file = "weather.wgsl"
@@ -55,8 +48,6 @@ scale = 0.25
 [[post]]
 file = "post/grade.wgsl"
 name = "Cinematic Grade"
-output = "graded"
-scale = 1.0
 
 [[post]]
 file = "post/fxaa.wgsl"
@@ -74,6 +65,7 @@ wrap = "repeat"
 [[materials]]
 id = 1
 sprites = ["block/water_still", "block/water_flow"]
+blocks = ["water"]
 translucent = true
 
 [[materials]]
@@ -126,10 +118,8 @@ sprites = [
 ]
 translucent = false
 
-[[lights]]
-color = [1.0, 0.66, 0.32]
-blocks = ["*torch", "lantern", "glowstone", "shroomlight", "jack_o_lantern", "lava", "campfire"]
-
+# Cool emitters only: warm torchlight is tinted from light.x in common.wgsl, so the
+# CPU never has to rebuild the 3D coloured-light grid when crossing chunk borders.
 [[lights]]
 color = [0.35, 0.85, 1.0]
 blocks = ["soul_*", "sea_lantern"]

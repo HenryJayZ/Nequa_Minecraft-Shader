@@ -1,7 +1,14 @@
+// Neoqua - shared helpers, prepended to every stage (Shader API 0.2, linear light).
+// Pure math and `frame` helpers only: the prelude owns every binding.
+
 const NEOQUA_PI: f32 = 3.14159265;
 const NEOQUA_TAU: f32 = 6.28318530;
 const NEOQUA_WRAP: f32 = 64.0;
 const NEOQUA_K_UNIT: f32 = 0.09817477;
+
+// BT.709 luminance weights. API 0.2 has no `frame.luminance`; this is the same
+// dot product the reference documents.
+const NEOQUA_LUMA: vec3<f32> = vec3<f32>(0.2126, 0.7152, 0.0722);
 
 const NEOQUA_DAY_ZENITH: vec3<f32> = vec3<f32>(0.075, 0.245, 0.680);
 const NEOQUA_DAY_HORIZON: vec3<f32> = vec3<f32>(0.420, 0.690, 0.960);
@@ -16,8 +23,10 @@ const NEOQUA_SUN_COL: vec3<f32> = vec3<f32>(1.000, 0.910, 0.740);
 const NEOQUA_SUNSET_COL: vec3<f32> = vec3<f32>(1.000, 0.420, 0.140);
 const NEOQUA_MOON_COL: vec3<f32> = vec3<f32>(0.420, 0.560, 0.850);
 const NEOQUA_TORCH_COL: vec3<f32> = vec3<f32>(1.000, 0.540, 0.190);
-const NEOQUA_GAMMA_INV: vec3<f32> = vec3<f32>(0.45454545, 0.45454545, 0.45454545);
-const NEOQUA_GAMMA_FWD: vec3<f32> = vec3<f32>(2.2, 2.2, 2.2);
+
+// Declared here because both the vertex stage (its own module) and the material
+// stage (which appends vertex.wgsl) use it.
+override water_waves: bool = true;
 
 fn neoqua_sanitize_scalar(v: f32) -> f32 {
     let ok = (v >= 0.0) && (v <= 65504.0);
@@ -41,9 +50,11 @@ fn neoqua_safe_normalize(v: vec3<f32>) -> vec3<f32> {
 }
 
 fn neoqua_luma(c: vec3<f32>) -> f32 {
-    return max(dot(c, frame.luminance), 0.0);
+    return max(dot(c, NEOQUA_LUMA), 0.0);
 }
 
+// The wave phases are integer multiples of 2*pi over 64 blocks, so wrapping world
+// positions keeps the pattern continuous across the wrap.
 fn neoqua_wrap_pos(world_pos: vec3<f32>) -> vec3<f32> {
     return world_pos - floor(world_pos / NEOQUA_WRAP) * NEOQUA_WRAP;
 }
@@ -74,7 +85,7 @@ fn neoqua_sky_eval(raw_dir: vec3<f32>, include_glare: bool) -> vec3<f32> {
     let night = factors.z;
 
     let up = clamp(dir.y, 0.0, 1.0);
-    let horizon_curve = pow(1.0 - up, 3.2);
+    let sky_curve = pow(1.0 - up, 3.2);
     let lower_fade = smoothstep(-0.35, 0.02, dir.y);
 
     var zenith = mix(NEOQUA_NIGHT_ZENITH, NEOQUA_DAY_ZENITH, day);
@@ -83,7 +94,7 @@ fn neoqua_sky_eval(raw_dir: vec3<f32>, include_glare: bool) -> vec3<f32> {
     var horizon = mix(NEOQUA_NIGHT_HORIZON, NEOQUA_DAY_HORIZON, day);
     horizon = mix(horizon, NEOQUA_SUNSET_HORIZON, sunset * 0.85);
 
-    var sky = mix(zenith, horizon, horizon_curve);
+    var sky = mix(zenith, horizon, sky_curve);
 
     let sun_dir = neoqua_safe_normalize(frame.sun_direction);
     let moon_dir = neoqua_safe_normalize(frame.moon_direction);
@@ -114,11 +125,17 @@ fn neoqua_fog_factor(cam_rel_pos: vec3<f32>) -> f32 {
     let dist = length(cam_rel_pos);
     let cyl_dist = max(length(cam_rel_pos.xz), abs(cam_rel_pos.y));
 
-    let env_span = max(frame.fog_environment.y - frame.fog_environment.x, 0.001);
-    let ren_span = max(frame.fog_render.y - frame.fog_render.x, 0.001);
+    var env_fog = 0.0;
+    if (frame.fog_end > frame.fog_start + 0.01) {
+        let span = frame.fog_end - frame.fog_start;
+        env_fog = clamp((dist - frame.fog_start) / span, 0.0, 1.0);
+    }
 
-    let env_fog = clamp((dist - frame.fog_environment.x) / env_span, 0.0, 1.0);
-    let ren_fog = clamp((cyl_dist - frame.fog_render.x) / ren_span, 0.0, 1.0);
+    var ren_fog = 0.0;
+    if (frame.render_distance > frame.fog_start + 1.0) {
+        let span = frame.render_distance - frame.fog_start;
+        ren_fog = clamp((cyl_dist - frame.fog_start) / span, 0.0, 1.0);
+    }
 
     var fog = max(env_fog * env_fog * (3.0 - 2.0 * env_fog), ren_fog * ren_fog);
 
@@ -149,8 +166,8 @@ fn neoqua_apply_fog(color: vec3<f32>, cam_rel_pos: vec3<f32>) -> vec3<f32> {
     let dir = neoqua_safe_normalize(cam_rel_pos);
     var fog_col = frame.fog_color;
     if (frame.dimension == 0) {
-        let horizon_dir = neoqua_safe_normalize(vec3<f32>(dir.x, max(dir.y, 0.04), dir.z));
-        fog_col = mix(neoqua_sky_eval(horizon_dir, true), frame.fog_color, 0.22);
+        let fog_dir = neoqua_safe_normalize(vec3<f32>(dir.x, max(dir.y, 0.04), dir.z));
+        fog_col = mix(neoqua_sky_eval(fog_dir, true), frame.fog_color, 0.22);
     }
     if (frame.in_water > 0.001) {
         let day = neoqua_day_factors().x;

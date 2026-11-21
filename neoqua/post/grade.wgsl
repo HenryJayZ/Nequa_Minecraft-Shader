@@ -1,3 +1,6 @@
+// Neoqua - post pass 3: bloom composite, underwater tint and the cinematic grade.
+// No `output`: this pass writes `previous`, so the FXAA pass after it sees the grade.
+
 override bloom_enabled: bool = true;
 override bloom_strength: f32 = 0.22;
 override grade_preset: u32 = 0u;

@@ -1,3 +1,5 @@
+// Neoqua - post pass 2: quarter-res 5-tap tent blur of `bloom_a` into `bloom_b`.
+
 override bloom_enabled: bool = true;
 
 fn post(input: PostInput) -> vec4<f32> {

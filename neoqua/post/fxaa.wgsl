@@ -1,3 +1,7 @@
+// Neoqua - post pass 4 (last): HDR-safe FXAA. Post runs in linear HDR before
+// `[tonemap]`, so edge detection uses a Reinhard-compressed perceptual luma and
+// the blend happens in compressed space.
+
 override fxaa_enabled: bool = true;
 
 fn neoqua_compress_hdr(c: vec3<f32>) -> vec3<f32> {
@@ -11,7 +15,7 @@ fn neoqua_expand_hdr(c: vec3<f32>) -> vec3<f32> {
 }
 
 fn neoqua_perceptual_luma(compressed: vec3<f32>) -> f32 {
-    return sqrt(max(dot(compressed, frame.luminance), 0.0));
+    return sqrt(max(dot(compressed, NEOQUA_LUMA), 0.0));
 }
 
 fn post(input: PostInput) -> vec4<f32> {

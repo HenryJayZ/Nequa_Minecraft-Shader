@@ -1,3 +1,5 @@
+// Neoqua - post pass 1: half-res bright pass into `bloom_a`.
+
 override bloom_enabled: bool = true;
 
 fn post(input: PostInput) -> vec4<f32> {

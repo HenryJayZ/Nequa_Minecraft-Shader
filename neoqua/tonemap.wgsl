@@ -1,3 +1,6 @@
+// Neoqua - [tonemap] stage (API 0.2): exposure, highlight desaturation and a
+// filmic curve that rolls into `frame.headroom`.
+
 override exposure: f32 = 1.05;
 
 fn neoqua_filmic_curve(x: vec3<f32>) -> vec3<f32> {
