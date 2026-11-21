@@ -1,2 +1,2 @@
-# Shader_Nequa
+# Nequa
 WIP Shader made for intel graphics
